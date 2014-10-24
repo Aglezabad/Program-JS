@@ -1,0 +1,23 @@
+{
+  "name": "program-JS",
+  "version": "0.0.0",
+  "description": "Port written in Javascript of Dr. Wallace AIML2.0 interpreter.",
+  "main": "Main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Aglezabad/program-JS.git"
+  },
+  "keywords": [
+    "aiml",
+    "interpreter"
+  ],
+  "author": "Ángel González",
+  "license": "GPLv2",
+  "bugs": {
+    "url": "https://github.com/Aglezabad/program-JS/issues"
+  },
+  "homepage": "https://github.com/Aglezabad/program-JS"
+}
