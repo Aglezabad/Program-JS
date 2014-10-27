@@ -21,7 +21,8 @@
     Boston, MA  02110-1301, USA.
 */
 
-var FS = require("fs");
+var FS = require("fs"),
+HashMap = require("./util/HashMap");
 
 function convert(bot, action) {
     switch(action){
@@ -37,14 +38,48 @@ function convert(bot, action) {
 function getGloss(bot, filename) {
     console.log("getGloss");
     try{
-        FS.readFile(filename, function (err,data) {
-            if (err) {
-                return console.error(err);
-            }
-            getGlossFromInputStream(bot, data);
-        });
+        var lines = FS.createReadStream(filename).lines;
+        getGlossFromInputStream(bot, lines);
     } catch(e) {
         console.error("ERROR: " + e);
+    }
+}
+
+function getGlossFromInputStream(bot, lines){
+    console.log("getGlossFromInputStream");
+    var strLine, 
+    cnt = 0, 
+    fileCnt = 0,
+    def = new HashMap();
+    try{
+        //Read file line by line.
+        var word = null,
+        gloss = null;
+        lines.forEach(function(line){
+            strLine = line;
+            if(strLine.indexOf("<entry word") !== -1){
+                var start = strLine.indexOf("<entry word=\"")+"<entry word=\"".length,
+                end = strLine.indexOf("#");
+
+                word = strLine.substring(start, end);
+                word = word.replace("/_/g", " ");
+                console.log(word);
+            } else if(strLine.indexOf("<gloss>") !== -1){
+                gloss = strLine.replace("/<gloss>/g", "");
+                gloss = strLine.replace("/</gloss>/g", "");
+                gloss = gloss.trim();
+                console.log(gloss);
+            }
+
+            if(word !== null && gloss !== null){
+                word = word.toLowerCase().trim();
+                if(gloss.length > 2){
+                    gloss = gloss.substring(0,1).toUpperCase();
+                }
+                var definition;
+                if()
+            }
+        });
     }
 }
 
@@ -54,7 +89,7 @@ function mainFunction(args) {
     MagicBooleans.trace_mode = true;
     var action = "chat";
     console.log(MagicStrings.program_name_version);
-    for each (var s in args){
+    for(var s in args){
         var splitArg = s.split("=");
         if(splitArg.length >= 2){
             var option = splitArg[0],
@@ -141,4 +176,4 @@ function main(args) {
     mainFunction(args);
 }
 
-main(process.argv);
+main(process.argv.slice(2));
