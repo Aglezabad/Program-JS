@@ -22,7 +22,8 @@
 */
 
 var FS = require("fs"),
-HashMap = require("./util/HashMap");
+HashMap = require("hashmap").HashMap,
+MagicStrings = require("./ab/MagicStrings");
 
 function convert(bot, action) {
     switch(action){
@@ -32,6 +33,25 @@ function convert(bot, action) {
         case "csv2aiml":
             bot.writeAIMLFiles();
             break;
+    }
+}
+
+function sraixCache(filename, chatSession){
+    var limit = 1000,
+    strLine,
+    count = 0;
+    try{
+        FS.createReadStream(filename).lines
+            .forEach(function(line){
+                if(count++ < limit){
+                    strLine = line;
+                    console.log("Human: " + strLine);
+                    var response = chatSession.multiSentenceRespond(strLine);
+                    console.log("Robot: " + response);
+                }
+            });
+    } catch(ex){
+        console.error(ex);
     }
 }
 
@@ -77,9 +97,37 @@ function getGlossFromInputStream(bot, lines){
                     gloss = gloss.substring(0,1).toUpperCase();
                 }
                 var definition;
-                if()
+                if(def.has(word)){
+                    definition = def.get(word);
+                    definition = definition+"; "+gloss;
+                } else {
+                    definition = gloss;
+                }
+                def.set(word, definition);
+                word = null;
+                gloss = null;
             }
         });
+        var d = new Category(0,"WNDEF *","*","*","unknown","wndefs"+filecnt+".aiml");
+        bot.brain.addCategory(d);
+        for(var x in def.keys()){
+            word = x;
+            gloss = def.get(word)+".";
+            cnt++;
+            if(cnt % 5000 === 0){
+                filecnt++;
+            }
+
+            var c = new Category(0,"WNDEF "+word,"*","*",gloss,"wndefs"+filecnt+".aiml");
+            console.log(cnt+" "+filecnt+" "+c.inputThatTopic()+":"+c.getTemplate()+":"+c.getFilename());
+            var node; //Nodemapper
+            if((node = bot.brain.findNode(c)) !== null){
+                node.category.setTemplate(node.category.getTemplate()+","+gloss);
+            }
+            bot.brain.addCategory(c);
+        }
+    } catch(ex){
+        console.error(ex);
     }
 }
 
@@ -135,7 +183,7 @@ function mainFunction(args) {
     switch(action) {
         case "chat":
         case "chat-app":
-            var doWrites = !(action === "chat-app");
+            var doWrites = (action !== "chat-app");
             TestAB.testChat(bot, doWrites, MagicBooleans.trace_mode);
             break;
         case "ab":
@@ -146,17 +194,18 @@ function mainFunction(args) {
             convert(bot, action);
             break;
         case "abwq":
-            AB ab = new AB(bot, TestAB.sampleFile);
+            var ab = new AB(bot, TestAB.sampleFile);
             ab.abwq();
             break;
         case "test":
             TestAB.runTests(bot, MagicBooleans.trace_mode);
             break;
         case "shadow": 
-            MagicBooleans.trace_mode = false; bot.shadowChecker());
+            MagicBooleans.trace_mode = false;
+            bot.shadowChecker();
             break;
         case "iqtest":
-            ChatTest ct = new ChatTest(bot);
+            var ct = new ChatTest(bot);
             try {
                 ct.testMultisentenceRespond();
             } catch(ex){
@@ -170,7 +219,7 @@ function mainFunction(args) {
 }
 
 function main(args) {
-    MagicStrings.setRootPath();
+    MagicStrings.setRootPathOnHome();
 
     AIMLProcessor.extension =  new PCAIMLProcessorExtension();
     mainFunction(args);
