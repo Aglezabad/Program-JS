@@ -25,7 +25,7 @@
  * Global values for many strings in programJS (programAB)
  */
 function MagicStrings() {
-    return undefined;
+    var dummyVar;
 }
 
 // General global strings
